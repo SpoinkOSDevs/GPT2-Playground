@@ -7,7 +7,7 @@ app = Flask(__name__)
 # Load the fine-tuned model and tokenizer
 model = GPT2LMHeadModel.from_pretrained('gpt2')
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-model.load_state_dict(torch.load('fine_tuned_model.pth'))
+model.load_state_dict(torch.load('fine_tuned_model'))
 model.eval()
 
 @app.route('/')
