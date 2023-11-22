@@ -1,7 +1,7 @@
 import torch
 import requests
 from bs4 import BeautifulSoup
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
+from transformers import GPT2LMHeadModel, GPT2Config, GPT2Tokenizer
 from tqdm import tqdm
 
 # Function to scrape Urban Dictionary for definitions
@@ -28,28 +28,36 @@ def scrape_all_terms():
     else:
         return None
 
-# Function to fine-tune the GPT-2 model on the entire Urban Dictionary dataset with batch training and progress bar
-def fine_tune_gpt2(epochs=1, batch_size=4):
-    # Load the GPT-2 model and tokenizer
+# Function to fine-tune BrokeGPT with 20 layers, optimizations, and on the entire Urban Dictionary dataset with batch training and progress bar
+def fine_tune_broke_gpt_optimized(epochs=1, batch_size=4):
+    # Load BrokeGPT, the tokenizer, and config
     model = GPT2LMHeadModel.from_pretrained('gpt2')
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+    config = GPT2Config.from_pretrained('gpt2')
+
+    # Set BrokeGPT to use 20 layers
+    config.num_hidden_layers = 20
+    model = GPT2LMHeadModel(config)
 
     # Set the pad token
     tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
-    # Move the model to the appropriate device (CPU/GPU)
+    # Move BrokeGPT to the appropriate device (CPU/GPU)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # Initialize optimizer
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
+    # Initialize optimizer with some optimizations
+    optimizer = torch.optim.AdamW(model.parameters(), lr=2e-5, weight_decay=0.01)
+
+    # Use a learning rate scheduler
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.95)
 
     # Scrape all terms from Urban Dictionary
     all_terms = scrape_all_terms()
 
     if all_terms:
         for epoch in range(epochs):
-            # Train the model on the entire dataset in batches with a progress bar
+            # Train BrokeGPT on the entire dataset in batches with a progress bar
             progress_bar = tqdm(all_terms, desc=f'Epoch: {epoch + 1}/{epochs}')
             for term in progress_bar:
                 definitions = scrape_urban_dictionary(term)
@@ -62,19 +70,19 @@ def fine_tune_gpt2(epochs=1, batch_size=4):
                     if input_ids.numel() == 0:
                         continue
 
-                    # Ensure that input_ids are within the range of the model's vocabulary
+                    # Ensure that input_ids are within the range of BrokeGPT's vocabulary
                     input_ids = torch.clamp(input_ids, 0, model.config.vocab_size - 1)
 
                     # Calculate the total number of batches
                     num_batches = (input_ids.size(0) + batch_size - 1) // batch_size
 
-                    # Train the model in batches with a progress bar
+                    # Train BrokeGPT in batches with a progress bar
                     for i in range(num_batches):
                         batch_start = i * batch_size
                         batch_end = min((i + 1) * batch_size, input_ids.size(0))
                         batch_input_ids = input_ids[batch_start:batch_end, :]
 
-                        # Fine-tune the model with the batched input
+                        # Fine-tune BrokeGPT with the batched input
                         outputs = model(batch_input_ids, labels=batch_input_ids)
                         loss = outputs.loss
 
@@ -85,18 +93,21 @@ def fine_tune_gpt2(epochs=1, batch_size=4):
 
                         progress_bar.set_postfix({'Loss': loss.item()})
 
-        # Save the fine-tuned model and tokenizer separately
-        save_model(model, tokenizer)
+            # Update the learning rate at the end of each epoch
+            scheduler.step()
+
+        # Save the fine-tuned BrokeGPT model and tokenizer separately
+        save_model(model, tokenizer, output_path='fine_tuned_model')
     else:
         print("Error: Unable to scrape terms from Urban Dictionary.")
 
-# Function to save the fine-tuned model and tokenizer separately
+# Function to save the fine-tuned BrokeGPT model and tokenizer separately
 def save_model(model, tokenizer, output_path='fine_tuned_model'):
-    # Save the model state dictionary
+    # Save BrokeGPT's model state dictionary
     torch.save(model.state_dict(), f'{output_path}/model_state_dict.pth')
 
-    # Save the tokenizer's vocabulary
+    # Save BrokeGPT's tokenizer's vocabulary
     tokenizer.save_pretrained(output_path)
 
-# Fine-tune the model on the entire Urban Dictionary dataset with progress bar
-fine_tune_gpt2(epochs=5, batch_size=4)
+# Fine-tune BrokeGPT on the entire Urban Dictionary dataset with progress bar, 20 layers, and optimizations
+fine_tune_broke_gpt_optimized(epochs=5, batch_size=4)
