@@ -15,15 +15,31 @@ model.eval()
 
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
+# Memory to store user input and conversation history
+user_memory = {'prompts': [], 'conversation': []}
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # Display the conversation history to the user
+    conversation_history = "\n".join(user_memory['conversation'] + user_memory['prompts'])
+    return render_template('index.html', conversation_history=conversation_history)
 
 @app.route('/generate', methods=['POST'])
 def generate():
     prompt = request.form.get('prompt', '')
-    generated_text = generate_text(prompt)
-    return render_template('index.html', prompt=prompt, generated_text=generated_text)
+    
+    # Store user input in memory
+    user_memory['prompts'].append(prompt)
+    
+    # Build conversation history
+    conversation_history = "\n".join(user_memory['conversation'] + user_memory['prompts'])
+    
+    generated_text = generate_text(conversation_history)
+    
+    # Store generated text in memory for future reference
+    user_memory['conversation'].append(generated_text)
+    
+    return render_template('index.html', prompt=prompt, generated_text=generated_text, conversation_history=conversation_history)
 
 def generate_text(prompt, max_length=100):
     input_ids = tokenizer.encode(prompt, return_tensors="pt", truncation=True)
@@ -38,13 +54,13 @@ def generate_text(prompt, max_length=100):
         num_beams=5,
         no_repeat_ngram_size=2,
         top_k=50,
-        top_p=0.1,  # Adjusted temperature for sample-based generation
-        do_sample=True,  # Enable sample-based generation
+        top_p=0.1,
+        do_sample=True,
     )
 
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
+    
     return generated_text
 
 if __name__ == '__main__':
-    # Run the app with host and port specified
     app.run(host='0.0.0.0', port=8080, debug=False)
