@@ -31,7 +31,17 @@ def generate_text(prompt, max_length=100):
 
     attention_mask = torch.ones(input_ids.shape, device=device)
 
-    output = model.generate(input_ids, attention_mask=attention_mask, max_length=max_length, num_beams=5, no_repeat_ngram_size=2, top_k=50, top_p=0.95)
+    output = model.generate(
+        input_ids,
+        attention_mask=attention_mask,
+        max_length=max_length,
+        num_beams=5,
+        no_repeat_ngram_size=2,
+        top_k=50,
+        top_p=0.8,  # Adjusted temperature for sample-based generation
+        do_sample=True,  # Enable sample-based generation
+    )
+
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
     return generated_text
 
