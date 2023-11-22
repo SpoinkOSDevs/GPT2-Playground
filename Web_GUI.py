@@ -50,9 +50,7 @@ def generate_text(prompt, max_length=100):
     input_ids = tokenizer.encode(prompt, return_tensors="pt", truncation=True)
     input_ids = input_ids.to(device)
 
-    attention_mask = torch.ones(input_ids.shape, device=device)
-
-    output = model.generate(input_ids, attention_mask=attention_mask, max_length=max_length, num_beams=5, no_repeat_ngram_size=2, top_k=50, top_p=0.95)
+    output = model.generate(input_ids, max_length=max_length, num_beams=5, no_repeat_ngram_size=2, top_k=50, top_p=0.95)
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
     return generated_text
 
