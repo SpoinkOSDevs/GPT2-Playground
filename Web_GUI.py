@@ -20,9 +20,7 @@ user_memory = {'prompts': [], 'conversation': []}
 
 @app.route('/')
 def index():
-    # Display the conversation history to the user
-    conversation_history = "\n".join(user_memory['conversation'] + user_memory['prompts'])
-    return render_template('index.html', conversation_history=conversation_history)
+    return render_template('index.html')
 
 @app.route('/generate', methods=['POST'])
 def generate():
@@ -39,7 +37,7 @@ def generate():
     # Store generated text in memory for future reference
     user_memory['conversation'].append(generated_text)
     
-    return render_template('index.html', prompt=prompt, generated_text=generated_text, conversation_history=conversation_history)
+    return render_template('index.html', prompt=prompt, generated_text=generated_text)
 
 def generate_text(prompt, max_length=100):
     input_ids = tokenizer.encode(prompt, return_tensors="pt", truncation=True)
@@ -54,7 +52,7 @@ def generate_text(prompt, max_length=100):
         num_beams=5,
         no_repeat_ngram_size=2,
         top_k=50,
-        top_p=0.2,
+        top_p=0.1,
         do_sample=True,
     )
 
