@@ -1,14 +1,16 @@
 from flask import Flask, render_template, request
 import torch
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
+from transformers import GPT2LMHeadModel, GPT2Config, GPT2Tokenizer
 
 app = Flask(__name__)
 
-# Load the fine-tuned model and tokenizer
+# Load the fine-tuned BrokeGPT model and tokenizer
 model_path = 'fine_tuned_model/model_state_dict.pth'
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = GPT2LMHeadModel.from_pretrained('gpt2')
+# Create a GPT2Config to match the BrokeGPT model
+config = GPT2Config.from_pretrained('gpt2', num_hidden_layers=20)
+model = GPT2LMHeadModel(config)
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.to(device)
 model.eval()
@@ -25,24 +27,24 @@ def index():
     for i, prompt in enumerate(user_memory['prompts']):
         labeled_conversation.append(f'You: {prompt}')
         labeled_conversation.append(f'BrokeGPT: {user_memory["conversation"][i]}')
-    
+
     return render_template('index.html', conversation_history=labeled_conversation)
 
 @app.route('/generate', methods=['POST'])
 def generate():
     prompt = request.form.get('prompt', '')
-    
+
     # Store user input in memory
     user_memory['prompts'].append(prompt)
-    
+
     # Build conversation history
     conversation_history = "\n".join(user_memory['conversation'] + user_memory['prompts'])
-    
+
     generated_text = generate_text(prompt)
-    
+
     # Store generated text in memory for future reference
     user_memory['conversation'].append(generated_text)
-    
+
     return render_template('index.html', prompt=prompt, generated_text=generated_text, conversation_history=conversation_history)
 
 def generate_text(prompt, max_length=100):
@@ -64,7 +66,7 @@ def generate_text(prompt, max_length=100):
     )
 
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
-    
+
     return generated_text
 
 if __name__ == '__main__':
