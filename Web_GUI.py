@@ -5,7 +5,7 @@ from transformers import GPT2LMHeadModel, GPT2Tokenizer
 app = Flask(__name__)
 
 # Load the pre-trained model from your .pth file
-pretrained_model_path = 'path/to/your/pretrained_model.pth'
+pretrained_model_path = 'fine_tuned_model/model_state_dict.pth'
 model = GPT2LMHeadModel.from_pretrained(pretrained_model_path)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device)
