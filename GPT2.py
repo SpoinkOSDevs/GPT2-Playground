@@ -92,10 +92,10 @@ def fine_tune_gpt2(epochs=1, batch_size=4):
 
 # Function to save the fine-tuned model and tokenizer to a .pth file
 def save_model(model, tokenizer, output_path='fine_tuned_model.pth'):
-    # Save the model state dictionary and tokenizer configuration to a single file
+    # Save the model state dictionary and tokenizer to a single file
     torch.save({
         'model_state_dict': model.state_dict(),
-        'tokenizer_config': tokenizer.config,
+        'tokenizer': tokenizer,
     }, output_path)
 
 # Fine-tune the model on the entire Urban Dictionary dataset with progress bar
