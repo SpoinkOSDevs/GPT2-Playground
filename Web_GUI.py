@@ -15,29 +15,39 @@ model.eval()
 
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
-# Memory to store user input
-user_memory = {}
+# Memory to store user input and conversation history
+user_memory = {'prompts': [], 'conversation': []}
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # Display the conversation history to the user with labels
+    labeled_conversation = []
+    for i, prompt in enumerate(user_memory['prompts']):
+        labeled_conversation.append(f'You: {prompt}')
+        labeled_conversation.append(f'BrokeGPT: {user_memory["conversation"][i]}')
+    
+    return render_template('index.html', conversation_history=labeled_conversation)
 
 @app.route('/generate', methods=['POST'])
 def generate():
     prompt = request.form.get('prompt', '')
     
     # Store user input in memory
-    user_memory['prompt'] = prompt
+    user_memory['prompts'].append(prompt)
+    
+    # Build conversation history
+    conversation_history = "\n".join(user_memory['conversation'] + user_memory['prompts'])
     
     generated_text = generate_text(prompt)
-    return render_template('index.html', prompt=prompt, generated_text=generated_text)
+    
+    # Store generated text in memory for future reference
+    user_memory['conversation'].append(generated_text)
+    
+    return render_template('index.html', prompt=prompt, generated_text=generated_text, conversation_history=conversation_history)
 
 def generate_text(prompt, max_length=100):
-    # Use the stored prompt if available in memory
-    if 'prompt' in user_memory:
-        prompt = user_memory['prompt']
-    
-    input_ids = tokenizer.encode(prompt, return_tensors="pt", truncation=True)
+    input_text = f'You: {prompt}\nBrokeGPT:'
+    input_ids = tokenizer.encode(input_text, return_tensors="pt", truncation=True)
     input_ids = input_ids.to(device)
 
     attention_mask = torch.ones(input_ids.shape, device=device)
@@ -54,9 +64,6 @@ def generate_text(prompt, max_length=100):
     )
 
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
-    
-    # Store generated text in memory for future reference
-    user_memory['generated_text'] = generated_text
     
     return generated_text
 
