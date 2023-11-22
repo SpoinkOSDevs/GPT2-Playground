@@ -4,16 +4,14 @@ from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 app = Flask(__name__)
 
-# Load the fine-tuned model and tokenizer
-model_path = 'fine_tuned_model/model_state_dict.pth'
+# Load the pre-trained model from your .pth file
+pretrained_model_path = 'path/to/your/pretrained_model.pth'
+model = GPT2LMHeadModel.from_pretrained(pretrained_model_path)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-model = GPT2LMHeadModel.from_pretrained('gpt2-medium')  # Load the gpt2-medium model
-model.load_state_dict(torch.load(model_path, map_location=device))
 model.to(device)
 model.eval()
 
-tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
 # Memory to store user input and conversation history
 user_memory = {'prompts': [], 'conversation': []}
