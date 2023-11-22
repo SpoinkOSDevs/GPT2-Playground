@@ -1,51 +1,71 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BrokeGPT</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 20px;
-        }
+from flask import Flask, render_template, request
+import torch
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-        h1, h2 {
-            color: #1e90ff;
-        }
+app = Flask(__name__)
 
-        form {
-            margin-top: 20px;
-        }
+# Load the fine-tuned model and tokenizer
+model_path = 'fine_tuned_model/model_state_dict.pth'
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        input {
-            padding: 5px;
-            margin-right: 10px;
-        }
+model = GPT2LMHeadModel.from_pretrained('gpt2')
+model.load_state_dict(torch.load(model_path, map_location=device))
+model.to(device)
+model.eval()
 
-        button {
-            padding: 5px 10px;
-            background-color: #1e90ff;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-        }
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
-        p {
-            margin-top: 10px;
-            font-size: 18px;
-        }
-    </style>
-</head>
-<body>
-    <h1>BrokeGPT Text Generation:</h1>
-    <form method="POST" action="/generate">
-        <label for="prompt">Enter Prompt:</label>
-        <input type="text" id="prompt" name="prompt" required>
-        <button type="submit">Generate</button>
-    </form>
-    <h2>Generated Text:</h2>
-    <p>{{ generated_text }}</p>
-</body>
-</html>
+# Memory to store user input and conversation history
+user_memory = {'prompts': [], 'conversation': []}
+
+@app.route('/')
+def index():
+    # Display the conversation history to the user with labels
+    labeled_conversation = []
+    for i, prompt in enumerate(user_memory['prompts']):
+        labeled_conversation.append(f'You: {prompt}')
+        labeled_conversation.append(f'BrokeGPT: {user_memory["conversation"][i]}')
+    
+    return render_template('index.html', conversation_history=labeled_conversation)
+
+@app.route('/generate', methods=['POST'])
+def generate():
+    prompt = request.form.get('prompt', '')
+    
+    # Store user input in memory
+    user_memory['prompts'].append(prompt)
+    
+    # Build conversation history
+    conversation_history = "\n".join(user_memory['conversation'] + user_memory['prompts'])
+    
+    generated_text = generate_text(prompt)
+    
+    # Store generated text in memory for future reference
+    user_memory['conversation'].append(generated_text)
+    
+    return render_template('index.html', prompt=prompt, generated_text=generated_text, conversation_history=conversation_history)
+
+def generate_text(prompt, max_length=100):
+    input_text = f'You: {prompt}\nBrokeGPT:'
+    input_ids = tokenizer.encode(input_text, return_tensors="pt", truncation=True)
+    input_ids = input_ids.to(device)
+
+    attention_mask = torch.ones(input_ids.shape, device=device)
+
+    output = model.generate(
+        input_ids,
+        attention_mask=attention_mask,
+        max_length=max_length,
+        num_beams=5,
+        no_repeat_ngram_size=2,
+        top_k=50,
+        top_p=0.1,
+        do_sample=True,
+    )
+
+    generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
+    
+    return generated_text
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080, debug=False)
