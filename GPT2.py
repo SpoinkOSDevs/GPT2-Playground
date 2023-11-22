@@ -85,12 +85,11 @@ def fine_tune_gpt2(epochs=1, batch_size=4):
 
                         progress_bar.set_postfix({'Loss': loss.item()})
 
-        # Save the fine-tuned model to a .pth file
-        save_model(model, tokenizer)
+        # Save the fine-tuned model
+        model.save_pretrained('fine_tuned_model')
+        tokenizer.save_pretrained('fine_tuned_model')
     else:
         print("Error: Unable to scrape terms from Urban Dictionary.")
-
-# Function to save the fine-tuned model to a .pth file
 
 # Fine-tune the model on the entire Urban Dictionary dataset with progress bar
 fine_tune_gpt2(epochs=5, batch_size=4)
