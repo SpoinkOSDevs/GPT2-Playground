@@ -1,4 +1,4 @@
-=from flask import Flask, render_template, request
+from flask import Flask, render_template, request
 import torch
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
