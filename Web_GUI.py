@@ -35,6 +35,7 @@ def generate_text(prompt, max_length=100):
 
     attention_mask = torch.ones(input_ids.shape, device=gpt_device)
 
+    # Adjust the temperature to 0.3 for more focused responses
     output = gpt_model.generate(
         input_ids,
         attention_mask=attention_mask,
@@ -44,6 +45,7 @@ def generate_text(prompt, max_length=100):
         top_k=50,
         top_p=0.8,
         do_sample=True,
+        temperature=0.3,  # Adjust temperature for more focused responses
     )
 
     generated_text = gpt_tokenizer.decode(output[0], skip_special_tokens=True)
@@ -55,17 +57,16 @@ def generate_text(prompt, max_length=100):
     return generated_text
 
 def is_pg_content(text):
-    # Use DistilBERT for filtering
     inputs = distilbert_tokenizer(text, return_tensors="pt")
     labels = torch.tensor([1]).unsqueeze(0)  # Assume label 1 is for PG content
 
     outputs = distilbert_model(**inputs, labels=labels)
     logits = outputs.logits
 
-    # Check if the predicted label is PG (you may need to adjust the threshold)
+    # Check if any element in the tensor is above the threshold
     threshold = 0.5
-    prediction = torch.sigmoid(logits).item()
-    return prediction > threshold
+    prediction = torch.sigmoid(logits)
+    return torch.any(prediction > threshold).item()
 
 if __name__ == '__main__':
     # Run the app with host and port specified
