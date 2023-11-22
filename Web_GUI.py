@@ -48,7 +48,10 @@ def generate():
     return render_template('index.html', prompt=prompt, generated_text=generated_text, conversation_history=conversation_history)
 
 def generate_text(prompt, max_length=100):
-    input_text = f'You: {prompt}\nBrokeGPT:'
+    # Build conversation history
+    conversation_history = "\n".join(user_memory['conversation'] + user_memory['prompts'])
+
+    input_text = f'{conversation_history}\nYou: {prompt}\nBrokeGPT:'
     input_ids = tokenizer.encode(input_text, return_tensors="pt", truncation=True)
     input_ids = input_ids.to(device)
 
@@ -66,6 +69,8 @@ def generate_text(prompt, max_length=100):
     )
 
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
+
+    return generated_text
 
     return generated_text
 
