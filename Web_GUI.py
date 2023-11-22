@@ -54,7 +54,7 @@ def generate_text(prompt, max_length=100):
         num_beams=5,
         no_repeat_ngram_size=2,
         top_k=50,
-        top_p=0.1,
+        top_p=0.2,
         do_sample=True,
     )
 
