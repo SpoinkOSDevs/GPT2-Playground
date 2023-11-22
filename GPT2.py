@@ -90,6 +90,7 @@ def fine_tune_gpt2(epochs=1, batch_size=4):
     else:
         print("Error: Unable to scrape terms from Urban Dictionary.")
 
+<<<<<<< HEAD
 # Function to save the fine-tuned model and tokenizer to a .pth file
 def save_model(model, tokenizer, output_path='fine_tuned_model.pth'):
     # Save the model state dictionary and tokenizer to a single file
@@ -98,5 +99,15 @@ def save_model(model, tokenizer, output_path='fine_tuned_model.pth'):
         'tokenizer': tokenizer,
     }, output_path)
 
+=======
+# Function to save the fine-tuned model and tokenizer to a .pth file
+def save_model(model, tokenizer, output_path='fine_tuned_model.pth'):
+    # Save the model state dictionary and tokenizer to a single file
+    torch.save({
+        'model_state_dict': model.state_dict(),
+        'tokenizer': tokenizer,
+    }, output_path)
+
+>>>>>>> 162c3e09c056eccbc3c25e648f8b360783a64679
 # Fine-tune the model on the entire Urban Dictionary dataset with progress bar
 fine_tune_gpt2(epochs=5, batch_size=4)
