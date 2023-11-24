@@ -149,6 +149,7 @@ def generate_text(prompt, max_length=100, temperature=1.0):
         top_k=50,
         top_p=0.95,
         temperature=temperature  # Add this line for sample-based generation
+        do_sample+True    
     )
 
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
