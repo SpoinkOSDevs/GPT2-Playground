@@ -95,7 +95,7 @@ def main_screen():
 
 # Function to fine-tune the GPT-2 model on the entire Urban Dictionary dataset with batch training and progress bar
 def fine_tune_gpt2(epochs=1, batch_size=4):
-    # ... (Previous code)
+    # ... (Your previous fine-tuning code)
 
 # Main function
 def main():
