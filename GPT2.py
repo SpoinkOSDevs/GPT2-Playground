@@ -4,7 +4,7 @@ from tqdm import tqdm
 import questionary
 from bs4 import BeautifulSoup
 import requests
-import warc
+from warcio.archiveiterator import ArchiveIterator  # Updated import statement
 
 # Load the GPT-2 model and tokenizer
 model = GPT2LMHeadModel.from_pretrained('gpt2')
@@ -23,10 +23,10 @@ def fetch_common_crawl_subset(warc_url, num_documents=10):
     data = []
 
     with requests.get(warc_url, stream=True) as response:
-        for record in warc.WARCFile(fileobj=response.raw):
-            if record.content_type == 'text/html' and num_documents > 0:
+        for record in ArchiveIterator(response.raw):
+            if record.rec_type == 'response' and record.http_headers.get('Content-Type', '').startswith('text/html') and num_documents > 0:
                 # Extract meaningful text data from the HTML content
-                soup = BeautifulSoup(record.payload.read(), 'html.parser')
+                soup = BeautifulSoup(record.content_stream().read(), 'html.parser')
                 text_content = extract_text_from_html(soup)
                 if text_content:
                     data.append(text_content)
