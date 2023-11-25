@@ -34,6 +34,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Generate artifact
+        run: |
+          mv ./Web_GUI.py ./
+        # Archive the Python file as an artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: flask_app
+          path: .
+
   deploy:
     environment:
       name: github-pages
@@ -48,4 +57,5 @@ jobs:
         uses: actions/deploy-pages@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          deploy_dir: ./  # Deploy the root directory
+          preview: false
+          artifact_name: flask_app
