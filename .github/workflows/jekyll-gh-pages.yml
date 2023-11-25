@@ -35,7 +35,7 @@ jobs:
           pip install -r pages/requirements.txt
       - name: Generate static files with Frozen-Flask
         run: |
-          python -c "from Web_GUI import app; from flask_frozen import Freezer; freezer = Freezer(app); freezer.freeze()"
+          python -c "from your_script_name import create_app; from flask_frozen import Freezer; app = create_app(); freezer = Freezer(app); freezer.freeze()"
 
   deploy:
     environment:
