@@ -1,0 +1,10 @@
+Flask
+Werkzeug
+Flask-WTF
+transformers
+beautifulsoup4
+requests
+tqdm
+nltk
+torch
+Frozen-Flask
