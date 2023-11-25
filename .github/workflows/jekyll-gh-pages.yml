@@ -35,19 +35,19 @@ jobs:
           pip install -r requirements.txt  # Adjust the path as needed
       - name: Run Flask app
         run: |
-          nohup python Web_GUI.py &  # Adjust the script name as needed
+          nohup python Web_GUI.py
 
   deploy:
     environment:
       name: github-pages
-      url: ${{ secrets.GITHUB_SERVER_URL }}/  # Use the GitHub server URL for GitHub Actions
+      url: ${{ github.event.repository.owner.login }}.github.io/${{ github.event.repository.name }}/
     runs-on: ubuntu-latest
     needs: build
     steps:
       - name: Wait for Flask to start
         run: sleep 10  # Adjust as needed
       - name: Check health of Flask app
-        run: curl -I localhost:5000  # Adjust the port if needed
+        run: curl -I localhost:8080  # Adjust the port if needed
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
