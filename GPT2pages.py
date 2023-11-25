@@ -4,7 +4,6 @@ from warcio.archiveiterator import ArchiveIterator
 from tqdm import tqdm
 import torch
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
-import gzip
 from io import BytesIO
 
 # Load the GPT-2 model and tokenizer
@@ -31,10 +30,6 @@ def fetch_common_crawl_data(warc_url, num_documents=10):
 
                     if 'text/html' in content_type:
                         html_content = record.content_stream().read().decode('utf-8', 'ignore')
-                    elif 'application/gzip' in content_type:
-                        compressed_data = record.content_stream().read()
-                        with gzip.GzipFile(fileobj=BytesIO(compressed_data)) as f:
-                            html_content = f.read().decode('utf-8', 'ignore')
                     else:
                         # Handle other cases or skip if content type is not supported
                         print(f"Skipping record with unsupported content type: {content_type}")
