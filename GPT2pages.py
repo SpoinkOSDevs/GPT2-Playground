@@ -1,5 +1,5 @@
 import requests
-from bs4 import BeautifulSoup
+import beautifulsoup4
 from warcio.archiveiterator import ArchiveIterator
 from tqdm import tqdm
 import torch
