@@ -208,7 +208,9 @@ def generate_text(prompt, max_length=100, temperature=1.0, top_k=50, top_p=0.95,
     # Combine sentences to ensure coherence
     combined_text = ' '.join(decoded_sentences)
 
-    return combined_text
+return combined_text
+
+    return app
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=False)
+    create_app().run(host='0.0.0.0', port=8080, debug=False)
