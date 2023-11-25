@@ -23,8 +23,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Run pagessetup.sh
         run: |
-          chmod +x ./pagessetup.sh
-          ./pagessetup.sh
+          chmod +x pages/pagessetup.sh
+          pages/pagessetup.sh
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r pages/requirements.txt
       - name: Generate static files with Frozen-Flask
         run: |
           python -c "from Web_GUI import app; from flask_frozen import Freezer; freezer = Freezer(app); freezer.freeze()"
