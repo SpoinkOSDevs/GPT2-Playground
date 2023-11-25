@@ -3,7 +3,8 @@ from transformers import GPT2LMHeadModel, GPT2Tokenizer
 from tqdm import tqdm
 import questionary
 from bs4 import BeautifulSoup
-from cc_webgraph import Crawler
+import requests
+import warc
 
 # Load the GPT-2 model and tokenizer
 model = GPT2LMHeadModel.from_pretrained('gpt2')
@@ -17,20 +18,20 @@ model.to(device)
 # Initialize GPT-2 model optimizer
 optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
 
-# Function to fetch the Common Crawl dataset
-def fetch_common_crawl_dataset(url, num_pages=1):
-    # Crawl Common Crawl pages
-    crawler = Crawler()
+# Function to fetch a small portion of the Common Crawl dataset
+def fetch_common_crawl_subset(warc_url, num_documents=10):
     data = []
-    
-    for page in tqdm(crawler.iter(url, num_pages=num_pages), desc='Fetching Common Crawl'):
-        # Process the HTML content of each page
-        soup = BeautifulSoup(page.content, 'html.parser')
-        # Extract meaningful text data from the HTML content (replace this with your logic)
-        text_content = extract_text_from_html(soup)
-        if text_content:
-            data.append(text_content)
-    
+
+    with requests.get(warc_url, stream=True) as response:
+        for record in warc.WARCFile(fileobj=response.raw):
+            if record.content_type == 'text/html' and num_documents > 0:
+                # Extract meaningful text data from the HTML content
+                soup = BeautifulSoup(record.payload.read(), 'html.parser')
+                text_content = extract_text_from_html(soup)
+                if text_content:
+                    data.append(text_content)
+                    num_documents -= 1
+
     return data
 
 # Function to process HTML content and extract meaningful text
@@ -80,10 +81,9 @@ def main_screen():
 
 # Function to fine-tune the GPT-2 model on the Common Crawl dataset with batch training and progress bar
 def fine_tune_gpt2(epochs=1, batch_size=4):
-    # Fetch Common Crawl data
-    common_crawl_url = "http://commoncrawl.org/2020/10"  # Replace with the actual Common Crawl URL
-    num_pages = 1  # Adjust the number of pages based on your needs
-    common_crawl_data = fetch_common_crawl_dataset(common_crawl_url, num_pages=num_pages)
+    # Replace this with the actual URL of a Common Crawl WARC file
+    common_crawl_url = "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2022-21/segments/1643665376881.0/warc/CC-MAIN-20220403002115-20220403032115-00000.warc.gz"
+    common_crawl_data = fetch_common_crawl_subset(common_crawl_url, num_documents=10)
 
     # Process Common Crawl data
     processed_data = process_common_crawl_data(common_crawl_data)
