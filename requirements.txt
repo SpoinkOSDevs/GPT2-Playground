@@ -1,8 +1,9 @@
-transformers==4.11.3
-beautifulsoup4==4.10.0
-requests==2.26.0
-tqdm==4.62.3
-nltk==3.6.5
-Flask==2.0.1
-Flask-WTF==0.15.1
-torch==1.10.0
+Flask
+Werkzeug
+Flask-WTF
+transformers
+beautifulsoup4
+requests
+tqdm
+nltk
+torch
