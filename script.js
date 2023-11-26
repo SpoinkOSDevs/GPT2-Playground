@@ -21,11 +21,11 @@ app.post('/generate', (req, res) => {
     // Use PythonShell to run the Python code
     let options = {
         mode: 'text',
-        scriptPath: 'python.py', // Adjust the path
+        scriptPath: 'start.py', // Adjust the path
         args: [prompt],
     };
 
-    PythonShell.run('python.py', options, (err, results) => {
+    PythonShell.run('start.py', options, (err, results) => {
         if (err) throw err;
         const generatedText = results[0];
         res.send({ generatedText });
