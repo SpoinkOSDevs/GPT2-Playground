@@ -5,7 +5,8 @@ import nltk
 from nltk.tokenize import sent_tokenize
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
-from flask_freeze import Freezer
+from flask_frozen import Freezer
+
 
 def create_app():
     app = Flask(__name__)
