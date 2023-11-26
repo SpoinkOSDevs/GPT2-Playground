@@ -2,7 +2,7 @@ name: Trigger Downstream Workflow
 
 on:
   workflow_run:
-    workflows: ["Name-of-Your-Downstream-Workflow"]
+    workflows: [""]
     types:
       - completed
 
