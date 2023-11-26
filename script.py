@@ -12,7 +12,7 @@ model.eval()
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('page.html')
 
 @app.route('/generate', methods=['POST'])
 def generate():
