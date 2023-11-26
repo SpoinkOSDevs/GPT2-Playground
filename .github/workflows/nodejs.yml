@@ -1,3 +1,14 @@
+name: Node.js CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - gh-pages
+  pull_request:
+    branches:
+      - gh-pages
+
 jobs:
   build:
     runs-on: ubuntu-latest
