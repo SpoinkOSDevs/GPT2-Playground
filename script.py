@@ -18,7 +18,7 @@ def index():
 def generate():
     prompt = request.form['prompt']
     generated_text = generate_text(prompt)
-    return render_template('index.html', prompt=prompt, generated_text=generated_text)
+    return render_template('page.html', prompt=prompt, generated_text=generated_text)
 
 def generate_text(prompt, max_length=100):
     input_ids = tokenizer.encode(prompt, return_tensors="pt", truncation=True)
