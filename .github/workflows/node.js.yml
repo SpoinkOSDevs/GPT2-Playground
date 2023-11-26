@@ -21,6 +21,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Generate Package Lock
+        run: npm ci
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
