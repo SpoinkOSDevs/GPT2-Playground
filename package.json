@@ -2,7 +2,7 @@
   "name": "GPT2-Playground",
   "version": "1.0.0",
   "description": "Server",
-  "main": "index.js",
+  "main": "script.js",
   "scripts": {
     "start": "node script.js"
   },
