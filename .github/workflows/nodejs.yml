@@ -41,6 +41,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Deploy to Temporary Branch
+        run: |
+          git branch -D temp-gh-pages || true
+          git checkout -b temp-gh-pages
+          git add .
+          git commit -m "Deploy to temporary branch"
+          git push origin temp-gh-pages
+
       - name: Deploy to GH Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
