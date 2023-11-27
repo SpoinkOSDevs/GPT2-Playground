@@ -35,3 +35,9 @@ jobs:
 
       - name: Build
         run: npm run build --if-present
+
+      - name: Deploy to GH Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs # Set to the default GitHub Pages build directory
