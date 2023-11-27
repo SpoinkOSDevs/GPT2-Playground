@@ -41,6 +41,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Set Git User
+        run: |
+          git config --global user.email "SpoinkOSGithub@gmail.com"
+          git config --global user.name "SpoinkOSDevs"
+
       - name: Deploy to Temporary Branch
         run: |
           git branch -D temp-gh-pages || true
