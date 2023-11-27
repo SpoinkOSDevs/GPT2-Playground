@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - gh-pages
+      - main # Change this to your main branch name
   pull_request:
     branches:
-      - gh-pages
+      - main # Change this to your main branch name
 
 jobs:
   build:
@@ -39,5 +39,6 @@ jobs:
       - name: Deploy to GH Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs # Set to the default GitHub Pages build directory
+          github_token: ${{ secrets.GH_TOKEN }}
+          publish_dir: ./build # Adjust this if your build artifacts are in a different directory
+          publish_branch: gh-pages
