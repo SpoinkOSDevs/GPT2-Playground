@@ -5,14 +5,14 @@ const { PythonShell } = require('python-shell');
 
 // Create an instance of Express
 const app = express();
-const port = 3000;
+const port = 8080;
 
 // Use bodyParser to parse POST request data
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Serve HTML file
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + 'templates/page.html');
+    res.sendFile(__dirname + '/templates/page.html');
 });
 
 // Handle POST request to generate text
