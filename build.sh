@@ -21,6 +21,10 @@ npm ci
 # Build
 npm run build --if-present
 
+# Restart the terminal to apply nvm changes
+echo "Restarting the terminal..."
+exec bash
+
 # Install Python Dependencies
 sudo python3 -m pip install transformers beautifulsoup4 requests
 sudo pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
