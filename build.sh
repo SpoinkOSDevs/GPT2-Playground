@@ -13,23 +13,23 @@ sudo python3 ./GPT2pages.py
 NODE_VERSION=18.x
 
 # Checkout Repository
-git checkout v3
+sudo git checkout v3
 
 # Generate Package Lock
-npm install --package-lock-only
+sudo npm install --package-lock-only
 
 # Setup Node.js
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+sudo curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | sudo bash
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install $NODE_VERSION
+sudo nvm install $NODE_VERSION
 
 # Install Dependencies
-npm ci
+sudo npm ci
 
 # Build
-npm run build --if-present
+sudp npm run build --if-present
 
 # Restart the terminal to apply nvm changes
 echo "Restarting the terminal..."
-exec bash
+sudo exec bash
