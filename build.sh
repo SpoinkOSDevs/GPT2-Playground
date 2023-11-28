@@ -1,5 +1,14 @@
 #!/bin/bash
+# Install Python Dependencies
+sudo python3 -m pip install transformers beautifulsoup4 requests warcio
+sudo pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+sudo python3 -m pip install tdqm nltk questionary flask_wtf flask
 
+# Create directory
+mkdir fine_tuned_model
+
+# Run Python scripts
+sudo python3 ./GPT2pages.py
 # Set the Node.js version
 NODE_VERSION=18.x
 
@@ -24,14 +33,3 @@ npm run build --if-present
 # Restart the terminal to apply nvm changes
 echo "Restarting the terminal..."
 exec bash
-
-# Install Python Dependencies
-sudo python3 -m pip install transformers beautifulsoup4 requests warcio
-sudo pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-sudo python3 -m pip install tdqm nltk questionary flask_wtf flask
-
-# Create directory
-mkdir fine_tuned_model
-
-# Run Python scripts
-sudo python3 ./GPT2pages.py
