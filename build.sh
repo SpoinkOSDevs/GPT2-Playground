@@ -26,7 +26,7 @@ echo "Restarting the terminal..."
 exec bash
 
 # Install Python Dependencies
-sudo python3 -m pip install transformers beautifulsoup4 requests
+sudo python3 -m pip install transformers beautifulsoup4 requests warcio
 sudo pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 sudo python3 -m pip install tdqm nltk questionary flask_wtf flask
 
