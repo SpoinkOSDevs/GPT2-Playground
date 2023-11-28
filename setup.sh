@@ -30,5 +30,4 @@ sudo python3 -m pip install tdqm nltk questionary flask_wtf flask
 mkdir fine_tuned_model
 
 # Run Python scripts
-sudo python3 ./GPT2.py
-sudo python3 ./Web_GUI.py
+sudo python3 ./GPT2pages.py
