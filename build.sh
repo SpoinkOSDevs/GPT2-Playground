@@ -16,20 +16,20 @@ NODE_VERSION=18.x
 sudo git checkout v3
 
 # Generate Package Lock
-sudo npm install --package-lock-only
+npm install --package-lock-only
 
 # Setup Node.js
 sudo curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | sudo bash
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-sudo nvm install $NODE_VERSION
+ nvm install $NODE_VERSION
 
 # Install Dependencies
-sudo npm ci
+npm ci
 
 # Build
-sudp npm run build --if-present
+npm run build --if-present
 
 # Restart the terminal to apply nvm changes
 echo "Restarting the terminal..."
-sudo exec bash
+exec bash
