@@ -9,27 +9,4 @@ mkdir fine_tuned_model
 
 # Run Python scripts
 sudo python3 ./GPT2pages.py
-# Set the Node.js version
-NODE_VERSION=18.x
-
-# Checkout Repository
-git checkout v3
-
-# Generate Package Lock
-npm install --package-lock-only
-
-# Setup Node.js
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install $NODE_VERSION
-
-# Install Dependencies
-npm ci
-
-# Build
-npm run build --if-present
-
-# Restart the terminal to apply nvm changes
-echo "Restarting the terminal..."
-exec bash
+sudo python3 ./gen.py
