@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'supersecretkey'
 
 # Load the fine-tuned model and tokenizer
-model_path = 'fine_tuned_model/model_state_dict.pth'  # Update with your actual fine-tuned model path
+model_path = 'fine_tuned_model/fine_tuned_model.pth'  # Update with your actual fine-tuned model path
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 model = GPT2LMHeadModel.from_pretrained('gpt2')
