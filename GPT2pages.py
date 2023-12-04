@@ -3,7 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 from transformers import GPT2LMHeadModel, GPT2Config, GPT2Tokenizer
 from tqdm import tqdm
-
+import os
+save_path='fine_tuned_model.pth'
 # Function to scrape the Urban Dictionary for random words
 def scrape_random_urban_terms(num_terms=10):
     url = f'https://www.urbandictionary.com/random.php'
@@ -88,11 +89,7 @@ def fine_tune_gpt2_with_dataset(input_texts, epochs=1, batch_size=4, save_path='
         print(text)
 
     # Configure GPT-2 model with 128 layers and 64 hidden size
-    config = GPT2Config(
-        n_layer=128,
-        n_head=8,
-        n_embd=64
-    )
+    config = GPT2Config.from_pretrained('gpt2')
     model = GPT2LMHeadModel(config)
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
 
@@ -132,10 +129,24 @@ def fine_tune_gpt2_with_dataset(input_texts, epochs=1, batch_size=4, save_path='
             progress_bar.set_postfix({'Loss': loss.item()})
 
     # Save the fine-tuned model and tokenizer separately
+    save_model(model, tokenizer, output_path=save_path)
 
+    return model
+
+# Function to save the fine-tuned model and tokenizer separately
+def save_model(model, tokenizer, output_path='fine_tuned_model'):
+    # Ensure the output_path is a file path, not just a directory
+    if not output_path.endswith('.pth'):
+        output_path = os.path.join(output_path, 'model_state_dict.pth')
+
+    # Save the model state dictionary
+    torch.save(model.state_dict(), output_path)
+
+    # Save the tokenizer's vocabulary
+    tokenizer.save_pretrained('fine_tuned_model')
 
 # Example: Populate the Urban Dictionary dataset, match words and definitions, then fine-tune with 5 epochs and batch size of 4
-urban_dataset = populate_urban_dataset(num_terms=5)
+urban_dataset = populate_urban_dataset(num_terms=500)
 if not urban_dataset:
     print("No dataset available. Please check the dataset population logic.")
 else:
@@ -143,11 +154,5 @@ else:
     if not input_texts:
         print("No input_texts available. Please check the dataset matching logic.")
     else:
-        fine_tune_gpt2_with_dataset(input_texts, epochs=5, batch_size=4)
-# Function to save the fine-tuned model and tokenizer separately
-def save_model(model, tokenizer, output_path='fine_tuned_model'):
-    # Save the model state dictionary
-    torch.save(model.state_dict(), f'{output_path}/model_state_dict.pth')
-
-    # Save the tokenizer's vocabulary
-    tokenizer.save_pretrained(output_path)
+        # Fine-tune the model and get the trained model
+        model = fine_tune_gpt2_with_dataset(input_texts, epochs=20, batch_size=4, save_path='fine_tuned_model.pth')
