@@ -213,7 +213,8 @@ def generate_text(prompt, max_length=1000, temperature=0.8, beam_size=5, no_repe
         no_repeat_ngram_size=no_repeat_ngram_size,
         top_k=top_k,
         top_p=top_p,
-        temperature=temperature
+        temperature=temperature,
+        do_sample=True     
     )
 
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
