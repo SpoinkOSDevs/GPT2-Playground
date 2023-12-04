@@ -77,7 +77,7 @@ def match_words_and_definitions(dataset):
     return input_texts
 
 # Function to fine-tune the GPT-2 medium model on a dataset of words and definitions with batch training and progress bar
-def fine_tune_gpt2_with_dataset(input_texts, epochs=1, batch_size=4):
+def fine_tune_gpt2_with_dataset(input_texts, epochs=1, batch_size=4, save_path='fine_tuned_model.pth'):
     if not input_texts:
         print("The input_texts list is empty. Please check the scraping logic.")
         return
@@ -132,11 +132,10 @@ def fine_tune_gpt2_with_dataset(input_texts, epochs=1, batch_size=4):
             progress_bar.set_postfix({'Loss': loss.item()})
 
     # Save the fine-tuned model and tokenizer separately
-    model.save_pretrained('fine_tuned_model/model_state_dict.pth')
-    tokenizer.save_pretrained('fine_tuned_model')
+    model.save_pretrained(save_path)
 
 # Example: Populate the Urban Dictionary dataset, match words and definitions, then fine-tune with 5 epochs and batch size of 4
-urban_dataset = populate_urban_dataset(num_terms=500)
+urban_dataset = populate_urban_dataset(num_terms=5)
 if not urban_dataset:
     print("No dataset available. Please check the dataset population logic.")
 else:
@@ -144,4 +143,4 @@ else:
     if not input_texts:
         print("No input_texts available. Please check the dataset matching logic.")
     else:
-        fine_tune_gpt2_with_dataset(input_texts, epochs=50, batch_size=4)
+        fine_tune_gpt2_with_dataset(input_texts, epochs=5, batch_size=4, save_path='fine_tuned_model.pth')
