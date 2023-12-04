@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 # Function to scrape the Oxford English Dictionary for words and definitions
 def scrape_oed_words_and_definitions():
-    url = 'https://www.oed.com/'
+    url = f'https://en.oxforddictionaries.com/definition/{term}'
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
     word_elements = soup.find_all('a', class_='word')
@@ -69,7 +69,7 @@ def fine_tune_gpt2_with_dataset(dataset, epochs=1, batch_size=4):
             progress_bar.set_postfix({'Loss': loss.item()})
 
     # Save the fine-tuned model and tokenizer separately
-    save_model(model, tokenizer, output_path='fine_tuned_model/')
+    save_model(model, tokenizer, output_path='fine_tuned_model/model_state_dict.pth'')
 
 # Scrape words and definitions from OED
 word_definitions_dataset = scrape_oed_words_and_definitions()
