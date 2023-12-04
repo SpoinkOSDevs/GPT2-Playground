@@ -1,38 +1,32 @@
 import torch
 import requests
 from bs4 import BeautifulSoup
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
+from transformers import GPT2MediumLMHeadModel, GPT2Tokenizer
 from tqdm import tqdm
 
-# Function to scrape Urban Dictionary for definitions
-def scrape_urban_dictionary(term):
-    url = f'https://www.urbandictionary.com/define.php?term={term}'
+# Function to scrape the Oxford English Dictionary for words and definitions
+def scrape_oed_words_and_definitions():
+    url = 'https://www.oed.com/'
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-    definitions = soup.find_all('div', class_='meaning')
+    word_elements = soup.find_all('a', class_='word')
 
-    if definitions:
-        return [defn.get_text(separator='\n', strip=True) for defn in definitions]
-    else:
-        return None
+    words_and_definitions = []
 
-# Function to scrape all terms from Urban Dictionary
-def scrape_all_terms():
-    url = 'https://www.urbandictionary.com/'
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    terms = soup.find_all('a', class_='word')
+    for word_element in word_elements:
+        word = word_element.text
+        definitions = scrape_oed(word)
+        
+        if definitions:
+            words_and_definitions.append({'word': word, 'definitions': definitions})
 
-    if terms:
-        return [term.text for term in terms]
-    else:
-        return None
+    return words_and_definitions
 
-# Function to fine-tune the GPT-2 model on the entire Urban Dictionary dataset with batch training and progress bar
-def fine_tune_gpt2(epochs=1, batch_size=4):
-    # Load the GPT-2 model and tokenizer
-    model = GPT2LMHeadModel.from_pretrained('gpt2')
-    tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+# Function to fine-tune the GPT-2 medium model on a dataset of words and definitions with batch training and progress bar
+def fine_tune_gpt2_with_dataset(dataset, epochs=1, batch_size=4):
+    # Load the GPT-2 medium model and tokenizer
+    model = GPT2MediumLMHeadModel.from_pretrained('gpt2-medium')
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
 
     # Set the pad token
     tokenizer.add_special_tokens({'pad_token': '[PAD]'})
@@ -44,59 +38,41 @@ def fine_tune_gpt2(epochs=1, batch_size=4):
     # Initialize optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
 
-    # Scrape all terms from Urban Dictionary
-    all_terms = scrape_all_terms()
+    # Prepare the dataset
+    input_texts = []
+    for entry in dataset:
+        word = entry['word']
+        definitions = entry['definitions']
+        input_texts.extend([f"{word}: {definition}" for definition in definitions])
 
-    if all_terms:
-        for epoch in range(epochs):
-            # Train the model on the entire dataset in batches with a progress bar
-            progress_bar = tqdm(all_terms, desc=f'Epoch: {epoch + 1}/{epochs}')
-            for term in progress_bar:
-                definitions = scrape_urban_dictionary(term)
+    # Tokenize the dataset and move to device
+    input_ids = tokenizer(input_texts, return_tensors="pt", truncation=True, padding=True)['input_ids'].to(device)
 
-                if definitions:
-                    # Tokenize the definitions and move to device
-                    input_ids = tokenizer(definitions, return_tensors="pt", truncation=True, padding=True)['input_ids'].to(device)
+    # Ensure that input_ids are within the range of the model's vocabulary
+    input_ids = torch.clamp(input_ids, 0, model.config.vocab_size - 1)
 
-                    # Check if input_ids is empty
-                    if input_ids.numel() == 0:
-                        continue
+    for epoch in range(epochs):
+        # Train the model on the entire dataset in batches with a progress bar
+        progress_bar = tqdm(range(0, input_ids.size(0), batch_size), desc=f'Epoch: {epoch + 1}/{epochs}')
+        for i in progress_bar:
+            batch_input_ids = input_ids[i:i + batch_size, :]
 
-                    # Ensure that input_ids are within the range of the model's vocabulary
-                    input_ids = torch.clamp(input_ids, 0, model.config.vocab_size - 1)
+            # Fine-tune the model with the batched input
+            outputs = model(batch_input_ids, labels=batch_input_ids)
+            loss = outputs.loss
 
-                    # Calculate the total number of batches
-                    num_batches = (input_ids.size(0) + batch_size - 1) // batch_size
+            # Backward pass and optimization
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
 
-                    # Train the model in batches with a progress bar
-                    for i in range(num_batches):
-                        batch_start = i * batch_size
-                        batch_end = min((i + 1) * batch_size, input_ids.size(0))
-                        batch_input_ids = input_ids[batch_start:batch_end, :]
+            progress_bar.set_postfix({'Loss': loss.item()})
 
-                        # Fine-tune the model with the batched input
-                        outputs = model(batch_input_ids, labels=batch_input_ids)
-                        loss = outputs.loss
+    # Save the fine-tuned model and tokenizer separately
+    save_model(model, tokenizer, output_path='fine_tuned_model/')
 
-                        # Backward pass and optimization
-                        loss.backward()
-                        optimizer.step()
-                        optimizer.zero_grad()
+# Scrape words and definitions from OED
+word_definitions_dataset = scrape_oed_words_and_definitions()
 
-                        progress_bar.set_postfix({'Loss': loss.item()})
-
-        # Save the fine-tuned model and tokenizer separately
-        save_model(model, tokenizer)
-    else:
-        print("Error: Unable to scrape terms from Urban Dictionary.")
-
-# Function to save the fine-tuned model and tokenizer separately
-def save_model(model, tokenizer, output_path='fine_tuned_model'):
-    # Save the model state dictionary
-    torch.save(model.state_dict(), f'{output_path}/model_state_dict.pth')
-
-    # Save the tokenizer's vocabulary
-    tokenizer.save_pretrained(output_path)
-
-# Fine-tune the model on the entire Urban Dictionary dataset with progress bar
-fine_tune_gpt2(epochs=5, batch_size=4)
+# Fine-tune the GPT-2 medium model on the dataset of words and definitions
+fine_tune_gpt2_with_dataset(word_definitions_dataset, epochs=5, batch_size=4)
