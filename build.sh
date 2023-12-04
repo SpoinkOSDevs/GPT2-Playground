@@ -9,4 +9,5 @@ mkdir fine_tuned_model
 
 # Run Python scripts
 sudo python3 ./GPT2pages.py
+mv fine_tuned_model.pth fine_tuned_model/
 sudo python3 ./gen.py
