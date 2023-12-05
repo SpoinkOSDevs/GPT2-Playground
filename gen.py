@@ -1,11 +1,13 @@
 from flask import Flask, render_template_string, request, flash, jsonify
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, SelectField
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
+from transformers import GPT2LMHeadModel, GPT2Tokenizer, GPT2Config
 import torch
 import nltk
 from nltk.tokenize import sent_tokenize
 import string
+import threading
+import time
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'supersecretkey'
@@ -14,19 +16,47 @@ app.config['SECRET_KEY'] = 'supersecretkey'
 model_path = 'fine_tuned_model/fine_tuned_model.pth'  # Update with your actual fine-tuned model path
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = GPT2LMHeadModel.from_pretrained('gpt2-medium')
+# Load the initial model configuration
+config = GPT2Config.from_pretrained('gpt2-medium')
+config.hidden_size = 1024  # Set the hidden size to match your fine-tuned model
+model = GPT2LMHeadModel(config)
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.to(device)
 model.eval()
 
+# Get the layers from the model
+layers = list(model.transformer.children())
+
+# Function to get a new layer dynamically
+def get_new_layer():
+    # Get the next layer from the list (cycling through)
+    next_layer = layers.pop(0)
+    layers.append(next_layer)
+    return next_layer
+
+# Update the architecture of your fine-tuned model's layer
+def change_layer():
+    global layer  # Assuming 'layer' is a global variable
+
+    while True:
+        time.sleep(1)  # Change the layer every second (adjust as needed)
+        
+        # Assume 'new_layer' is the new layer you want to load
+        new_layer = get_new_layer()  # Implement a function to get the new layer
+        layer.load_state_dict({
+            'weight': new_layer.weight[:, :layer.weight.shape[1]],
+            'bias': new_layer.bias,
+        })
+
+# Start the thread to change the layer
+layer_change_thread = threading.Thread(target=change_layer)
+layer_change_thread.daemon = True
+layer_change_thread.start()
+
+# Load the tokenizer
 tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
 
-# Add a new pad token
-tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-
-# Download the nltk punkt tokenizer data
-nltk.download('punkt')
-
+# Define the Flask form
 class GenerationForm(FlaskForm):
     prompt = StringField('Enter Prompt:')
     max_length = StringField('Max Length (default: 1000)')  # Increase for longer text
@@ -38,7 +68,8 @@ class GenerationForm(FlaskForm):
     preset_options = SelectField('Preset Options', choices=[('casual', 'Casual Conversation'), ('formal', 'Formal Writing'), ('creative', 'Creative Story')])
     submit = SubmitField('Generate')
 
-html_template = '''
+# HTML template for rendering the form and generated text
+html_template = f'''
 <!DOCTYPE html>
 <html lang="en">
 
@@ -46,56 +77,7 @@ html_template = '''
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPT-2 Text Generation</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-
-    <style>
-        body {
-            background-color: #f0f0f0; /* Light Gray */
-            color: #333; /* Dark Gray */
-        }
-
-        .container {
-            max-width: 800px;
-            background-color: #fff; /* White */
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 30px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        h1,
-        h2 {
-            color: #333; /* Dark Gray */
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .btn-primary {
-            background-color: #007bff; /* Primary Blue */
-            border-color: #007bff;
-        }
-
-        .btn-primary:hover {
-            background-color: #0056b3; /* Darker Blue */
-            border-color: #0056b3;
-        }
-
-        .lead {
-            font-size: 1.2rem;
-            line-height: 1.6;
-        }
-
-        .list-group-item {
-            background-color: #ffc107; /* Warning Yellow */
-            color: #333; /* Dark Gray */
-            border-color: #ffc107;
-        }
-    </style>
+    <!-- Add your styles or include external stylesheets here -->
 </head>
 
 <body>
@@ -159,13 +141,7 @@ html_template = '''
 </html>
 '''
 
-# Add preset options
-preset_options = {
-    'casual': {'max_length': 500, 'temperature': 0.8, 'beam_size': 5, 'no_repeat_ngram_size': 2, 'top_k': 50, 'top_p': 0.95},
-    'formal': {'max_length': 300, 'temperature': 0.5, 'beam_size': 3, 'no_repeat_ngram_size': 1, 'top_k': 30, 'top_p': 0.9},
-    'creative': {'max_length': 200, 'temperature': 0.7, 'beam_size': 7, 'no_repeat_ngram_size': 3, 'top_k': 70, 'top_p': 0.98},
-}
-
+# Flask route to handle the web interface
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = GenerationForm()
@@ -194,14 +170,16 @@ def index():
         except Exception as e:
             flash(f"Error generating text: {str(e)}", 'error')
 
-    return render_template_string(html_template, form=form, generated_text=generated_text, preset_options=preset_options)
+    return render_template_string(html_template, form=form, generated_text=generated_text)
 
+# Flask route to handle AJAX request for updating options dynamically
 @app.route('/_update_options')
 def update_options():
     selected_option = request.args.get('selected_option', 'casual')
     options = preset_options[selected_option]
     return jsonify(options)
 
+# Function to generate text based on user input
 def generate_text(prompt, max_length=1000, temperature=0.8, beam_size=5, no_repeat_ngram_size=2, top_k=50, top_p=0.95):
     input_ids = tokenizer.encode(prompt, return_tensors="pt", truncation=True, padding=True)
     attention_mask = torch.ones(input_ids.shape, device=device)
@@ -215,7 +193,7 @@ def generate_text(prompt, max_length=1000, temperature=0.8, beam_size=5, no_repe
         top_k=top_k,
         top_p=top_p,
         temperature=temperature,
-        do_sample=True     
+        do_sample=True
     )
 
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
@@ -230,5 +208,6 @@ def generate_text(prompt, max_length=1000, temperature=0.8, beam_size=5, no_repe
 
     return combined_text
 
+# Run the Flask app
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=False)
