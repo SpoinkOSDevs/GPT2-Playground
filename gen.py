@@ -69,77 +69,7 @@ class GenerationForm(FlaskForm):
     submit = SubmitField('Generate')
 
 # HTML template for rendering the form and generated text
-html_template = f'''
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPT-2 Text Generation</title>
-    <!-- Add your styles or include external stylesheets here -->
-</head>
-
-<body>
-    <div class="container">
-        <h1 class="mt-5">GPT-2 Text Generation</h1>
-        <form method="POST" class="mt-4">
-            {{ form.hidden_tag() }}
-
-            <div class="form-group">
-                {{ form.preset_options.label }}
-                {{ form.preset_options(class="form-control", id="presetOptions", onchange="updateOptions()") }}
-            </div>
-
-            <div class="form-group">
-                {{ form.prompt.label }}
-                {{ form.prompt(class="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.max_length.label }}
-                {{ form.max_length(class="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.temperature.label }}
-                {{ form.temperature(class="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.beam_size.label }}
-                {{ form.beam_size(class="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.no_repeat_ngram_size.label }}
-                {{ form.no_repeat_ngram_size(class="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.top_k.label }}
-                {{ form.top_k(class="form-control") }}
-            </div>
-            <div class="form-group">
-                {{ form.top_p.label }}
-                {{ form.top_p(class="form-control") }}
-            </div>
-
-            {{ form.submit(class="btn btn-primary") }}
-        </form>
-        {% if generated_text %}
-            <h2 class="mt-4">Generated Text:</h2>
-            <p class="lead">{{ generated_text|safe }}</p>
-        {% endif %}
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <ul class="list-group mt-4">
-                    {% for message in messages %}
-                        <li class="list-group-item list-group-item-danger">{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
-    </div>
-</body>
-
-</html>
-'''
+html_template = 'templates/index.html'
 
 # Flask route to handle the web interface
 @app.route('/', methods=['GET', 'POST'])
