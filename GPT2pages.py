@@ -1,16 +1,16 @@
 import torch
 import requests
 from bs4 import BeautifulSoup
-from transformers import GPT2LMHeadModel, GPT2Config, GPT2Tokenizer
+from transformers import DistilBertModel, DistilBertTokenizer, GPT2LMHeadModel, GPT2Config, GPT2Tokenizer
 from tqdm import tqdm
 import os
-save_path='fine_tuned_model.pth'
+
 # Function to scrape the Urban Dictionary for random words
 def scrape_random_urban_terms(num_terms=10):
     url = f'https://www.urbandictionary.com/random.php'
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-    
+
     # Find all elements with the 'word' class within 'a' tags
     word_elements = soup.select('a.word')
 
@@ -20,7 +20,7 @@ def scrape_random_urban_terms(num_terms=10):
 # Function to scrape the Urban Dictionary for definitions
 def scrape_urban(term):
     base_url = f"https://www.urbandictionary.com/define.php?term={term}"
-    
+
     try:
         response = requests.get(base_url)
         response.raise_for_status()
@@ -39,86 +39,81 @@ def scrape_urban(term):
 
     soup = BeautifulSoup(response.text, 'html.parser')
     definition_element = soup.find('div', class_='meaning')
-    
+
     if definition_element:
         definition = definition_element.text.strip()
         return definition
     else:
         return f"Couldn't find a definition for {term}."
 
-# Function to populate the dataset with scraped words and definitions from Urban Dictionary
-def populate_urban_dataset(num_terms=10):
-    urban_dataset = []
-    
-    # Scrape random terms from Urban Dictionary
-    random_terms = scrape_random_urban_terms(num_terms=num_terms)
-    
-    # Print out the random terms
-    print("Random Urban Terms:", random_terms)
+# Function to filter Urban Dictionary data based on DistilBERT similarity
+def filter_urban_data_with_distilbert(dataset, threshold=0.5):
+    tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+    model = DistilBertModel.from_pretrained('distilbert-base-uncased')
 
-    # Retrieve the definitions for the random terms
-    for term in random_terms:
-        definition = scrape_urban(term)
-        if definition:
-            urban_dataset.append({'word': term, 'definition': definition})
-
-    return urban_dataset
-
-# Function to match words and definitions in the Urban Dictionary dataset
-def match_words_and_definitions(dataset):
-    input_texts = []
+    # Calculate DistilBERT embeddings for the definitions in the dataset
+    embeddings = []
     for entry in dataset:
-        word = entry['word']
         definition = entry['definition']
-        input_texts.append(f"{word}: {definition}")
+        tokens = tokenizer(definition, return_tensors='pt', truncation=True, padding=True)
+        with torch.no_grad():
+            outputs = model(**tokens)
+        embeddings.append(outputs.last_hidden_state.mean(dim=1).squeeze().numpy())
 
-    # Print out the input_texts
-    print("Content of input_texts:", input_texts)
-    
-    return input_texts
+    # Calculate similarity scores between embeddings
+    similarity_matrix = torch.nn.functional.cosine_similarity(torch.tensor(embeddings), torch.tensor(embeddings))
 
-# Function to fine-tune the GPT-2 medium model on a dataset of words and definitions with batch training and progress bar
-def fine_tune_gpt2_with_dataset(input_texts, epochs=1, batch_size=4, save_path='fine_tuned_model.pth'):
-    if not input_texts:
-        print("The input_texts list is empty. Please check the scraping logic.")
-        return
+    # Filter entries based on similarity threshold
+    filtered_data = [entry for entry, sim in zip(dataset, similarity_matrix[:, 1:]) if sim > threshold]
 
-    print(f"Number of input_texts: {len(input_texts)}")
-    print("Sample input_texts:")
-    for text in input_texts[:5]:
-        print(text)
+    return filtered_data
 
-    # Configure GPT-2 model with 128 layers and 64 hidden size
-    config = GPT2Config.from_pretrained('gpt2')
-    model = GPT2LMHeadModel(config)
-    tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
+# Function to merge datasets using a more advanced merge system
+def advanced_merge_datasets(dataset1, dataset2):
+    # Implement your advanced merge logic here
+    # For example, you can merge datasets based on common elements or other criteria
+    # This is a simplified example, modify according to your specific requirements
+    merged_dataset = dataset1 + dataset2
+
+    return merged_dataset
+
+# Function to fine-tune GPT-2 model
+def fine_tune_gpt2(input_texts, epochs=1, batch_size=4, save_path='fine_tuned_gpt2.pth'):
+    # Configure GPT-2 model
+    config = GPT2Config(
+        n_layer=128,
+        n_head=8,
+        n_embd=64
+    )
+    gpt2_model = GPT2LMHeadModel(config)
+    gpt2_tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
 
     # Set the pad token
-    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    gpt2_tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
-    # Move the model to the appropriate device (CPU/GPU)
+    # Move the GPT-2 model to the appropriate device (CPU/GPU)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
+    gpt2_model.to(device)
 
     # Initialize optimizer
-    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5)
+    optimizer = torch.optim.AdamW(gpt2_model.parameters(), lr=5e-5)
 
-    # Tokenize the dataset and move to device
-    input_ids = tokenizer(input_texts, return_tensors="pt", truncation=True, padding=True)['input_ids'].to(device)
-    input_ids = torch.clamp(input_ids, 0, model.config.vocab_size - 1)
+    # Tokenize the input_texts
+    input_ids = gpt2_tokenizer(input_texts, return_tensors="pt", truncation=True, padding=True)['input_ids'].to(device)
+    input_ids = torch.clamp(input_ids, 0, gpt2_model.config.vocab_size - 1)
 
     if input_ids.numel() == 0:
         print("No valid tokens found. Please check the input_texts.")
         return
 
     for epoch in range(epochs):
-        # Train the model on the entire dataset in batches with a progress bar
+        # Train the GPT-2 model on the entire dataset
         progress_bar = tqdm(range(0, input_ids.size(0), batch_size), desc=f'Epoch: {epoch + 1}/{epochs}')
         for i in progress_bar:
             batch_input_ids = input_ids[i:i + batch_size, :]
 
-            # Fine-tune the model with the batched input
-            outputs = model(batch_input_ids, labels=batch_input_ids)
+            # Fine-tune the GPT-2 model with the batched input
+            outputs = gpt2_model(input_ids=batch_input_ids, labels=batch_input_ids)
             loss = outputs.loss
 
             # Backward pass and optimization
@@ -128,31 +123,24 @@ def fine_tune_gpt2_with_dataset(input_texts, epochs=1, batch_size=4, save_path='
 
             progress_bar.set_postfix({'Loss': loss.item()})
 
-    # Save the fine-tuned model and tokenizer separately
-    save_model(model, tokenizer, output_path=save_path)
+    # Save the fine-tuned GPT-2 model
+    gpt2_model.save_pretrained(save_path)
 
-    return model
+# Example: Populate the Urban Dictionary dataset, match words and definitions
+urban_dataset = populate_urban_dataset(num_terms=100)
 
-# Function to save the fine-tuned model and tokenizer separately
-def save_model(model, tokenizer, output_path='fine_tuned_model'):
-    # Ensure the output_path is a file path, not just a directory
-    if not output_path.endswith('.pth'):
-        output_path = os.path.join(output_path, 'model_state_dict.pth')
+# Scrape random terms to create another dataset
+random_terms = scrape_random_urban_terms(num_terms=100)
+random_definitions = [scrape_urban(term) for term in random_terms]
 
-    # Save the model state dictionary
-    torch.save(model.state_dict(), output_path)
+# Create a new dataset from the random terms
+random_dataset = [{'word': term, 'definition': definition} for term, definition in zip(random_terms, random_definitions)]
 
-    # Save the tokenizer's vocabulary
-    tokenizer.save_pretrained('fine_tuned_model')
+# Merge datasets using a more advanced merge system
+merged_dataset = advanced_merge_datasets(urban_dataset, random_dataset)
 
-# Example: Populate the Urban Dictionary dataset, match words and definitions, then fine-tune with 5 epochs and batch size of 4
-urban_dataset = populate_urban_dataset(num_terms=500)
-if not urban_dataset:
-    print("No dataset available. Please check the dataset population logic.")
-else:
-    input_texts = match_words_and_definitions(urban_dataset)
-    if not input_texts:
-        print("No input_texts available. Please check the dataset matching logic.")
-    else:
-        # Fine-tune the model and get the trained model
-        model = fine_tune_gpt2_with_dataset(input_texts, epochs=20, batch_size=4, save_path='fine_tuned_model.pth')
+# Filter merged dataset using DistilBERT for similarity
+filtered_merged_dataset = filter_urban_data_with_distilbert(merged_dataset, threshold=0.7)
+
+# Fine-tune GPT-2 with the filtered and merged dataset
+fine_tune_gpt2([entry['definition'] for entry in filtered_merged_dataset], epochs=5, batch_size=4, save_path='fine_tuned_gpt2.pth')
