@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT-2 Text Generation</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <style>
+        body {
+            background-color: #f0f0f0; /* Light Gray */
+            color: #333; /* Dark Gray */
+        }
+
+        .container {
+            max-width: 800px;
+            background-color: #fff; /* White */
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            color: #333; /* Dark Gray */
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .btn-primary {
+            background-color: #007bff; /* Primary Blue */
+            border-color: #007bff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3; /* Darker Blue */
+            border-color: #0056b3;
+        }
+
+        .lead {
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .list-group-item {
+            background-color: #ffc107; /* Warning Yellow */
+            color: #333; /* Dark Gray */
+            border-color: #ffc107;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="mt-5">GPT-2 Text Generation</h1>
+        <form method="POST" class="mt-4">
+            {{ form.hidden_tag() }}
+
+            <div class="form-group">
+                {{ form.preset_options.label }}
+                {{ form.preset_options(class="form-control", id="presetOptions", onchange="updateOptions()") }}
+            </div>
+
+            <div class="form-group">
+                {{ form.prompt.label }}
+                {{ form.prompt(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.max_length.label }}
+                {{ form.max_length(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.temperature.label }}
+                {{ form.temperature(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.beam_size.label }}
+                {{ form.beam_size(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.no_repeat_ngram_size.label }}
+                {{ form.no_repeat_ngram_size(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.top_k.label }}
+                {{ form.top_k(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.top_p.label }}
+                {{ form.top_p(class="form-control") }}
+            </div>
+
+            {{ form.submit(class="btn btn-primary") }}
+        </form>
+        {% if generated_text %}
+            <h2 class="mt-4">Generated Text:</h2>
+            <p class="lead">{{ generated_text|safe }}</p>
+        {% endif %}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="list-group mt-4">
+                    {% for message in messages %}
+                        <li class="list-group-item list-group-item-danger">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
+</body>
+
+</html>
