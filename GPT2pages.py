@@ -1,7 +1,7 @@
 import argparse
 import torch
-import requests
 from bs4 import BeautifulSoup
+import requests
 from transformers import GPT2LMHeadModel, GPT2Config, GPT2Tokenizer
 from tqdm import tqdm
 import numpy as np
@@ -74,13 +74,7 @@ def fine_tune_gpt2_dynamic_config(input_texts, num_layers, num_heads, num_embedd
 
     optimizer = torch.optim.AdamW(gpt2_model.parameters(), lr=5e-5)
 
-    # Scraping random terms
-    urban_dataset = scrape_random_urban_terms(num_terms=100)
-    random_definitions = [scrape_urban(term) for term in urban_dataset]
-    random_dataset = [{'word': term, 'definition': definition} for term, definition in zip(urban_dataset, random_definitions)]
-
     # Tokenize and preprocess for fine-tuning
-    input_texts = [entry['definition'] for entry in random_dataset]
     input_ids = gpt2_tokenizer(input_texts, return_tensors="pt", truncation=True, padding=True)['input_ids'].to(device)
     input_ids = torch.clamp(input_ids, 0, gpt2_model.config.vocab_size - 1)
 
@@ -119,6 +113,11 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
+    # Scraping random terms
+    urban_dataset = scrape_random_urban_terms(num_terms=100)
+    random_definitions = [scrape_urban(term) for term in urban_dataset]
+    random_dataset = [{'word': term, 'definition': definition} for term, definition in zip(urban_dataset, random_definitions)]
+
     # Example usage with dynamic configuration from command-line arguments
     trained_model = fine_tune_gpt2_dynamic_config(
         [entry['definition'] for entry in random_dataset],
@@ -130,4 +129,4 @@ if __name__ == "__main__":
     )
 
     # Save the trained model
-    torch.save(trained_model.state_dict(), 'fine_tuned_model_dynamic_config.pth')
+    torch.save(trained_model.state_dict(), 'fine_tuned_model.pth')
