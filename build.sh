@@ -1,9 +1,8 @@
 #!/bin/bash
 # Install Python Dependencies
-sudo python3 -m pip install transformers beautifulsoup4 requests warcio
+sudo python3 -m pip install transformers beautifulsoup4 requests warcio argparse
 sudo pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 sudo python3 -m pip install tdqm nltk questionary flask_wtf flask
-
 # Create directory
 mkdir fine_tuned_model
 
