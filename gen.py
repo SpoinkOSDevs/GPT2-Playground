@@ -18,7 +18,6 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Load the initial model configuration
 config = GPT2Config.from_pretrained('gpt2-medium')
-config.hidden_size = 1024  # Set the hidden size to match your fine-tuned model
 model = GPT2LMHeadModel(config)
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.to(device)
