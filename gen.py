@@ -5,6 +5,7 @@ from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import torch
 import nltk
 from nltk.tokenize import sent_tokenize
+import string
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'supersecretkey'
@@ -13,12 +14,12 @@ app.config['SECRET_KEY'] = 'supersecretkey'
 model_path = 'fine_tuned_model/fine_tuned_model.pth'  # Update with your actual fine-tuned model path
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = GPT2LMHeadModel.from_pretrained('gpt2')
+model = GPT2LMHeadModel.from_pretrained('gpt2-medium')
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.to(device)
 model.eval()
 
-tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
 
 # Add a new pad token
 tokenizer.add_special_tokens({'pad_token': '[PAD]'})
