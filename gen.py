@@ -17,7 +17,7 @@ model_path = 'fine_tuned_model/fine_tuned_model.pth'  # Update with your actual 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Load the initial model configuration
-config = GPT2Config.from_pretrained('gpt2-large')
+config = GPT2Config.from_pretrained('gpt2-xl')
 model = GPT2LMHeadModel(config)
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.to(device)
