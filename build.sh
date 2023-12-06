@@ -14,4 +14,10 @@ echo 'Training the AI this may take a while . . .'
 mv fine_tuned_model.pth fine_tuned_model/
 clear
 echo 'Starting Webserver . . .'
+sleep 0.3
+echo 'Brushing the Cat . .'
+sleep 2
+echo 'Fine tuning the Cogs and gears .'
+rm ./README.md
+Echo 'Done!'
 sudo python3 ./gen.py
