@@ -1,91 +1,124 @@
-from flask import Flask, render_template_string, request, flash, jsonify
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, SelectField
-from transformers import GPT2LMHeadModel, GPT2Tokenizer, GPT2Config
+from flask import Flask, render_template_string, request, flash
 import torch
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import nltk
 from nltk.tokenize import sent_tokenize
-import string
-import threading
-import time
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'supersecretkey'
 
 # Load the fine-tuned model and tokenizer
-model_path = 'fine_tuned_model/fine_tuned_model.pth'  # Update with your actual fine-tuned model path
+model_path = 'fine_tuned_model/model_state_dict.pth'
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# Load the initial model configuration
-config = GPT2Config(
-    n_embd=1600,  # Set the desired model size
-    n_layer=32,  # You can adjust the number of layers as needed
-    n_head=16,  # Set the desired number of attention heads
-)
-model = GPT2LMHeadModel(config)
+model = GPT2LMHeadModel.from_pretrained('gpt2')
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.to(device)
 model.eval()
 
-# Get the layers from the model
-layers = list(model.transformer.children())
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
-# Function to get a new layer dynamically
-def get_new_layer():
-    # Get the next layer from the list (cycling through)
-    next_layer = layers.pop(0)
-    layers.append(next_layer)
-    return next_layer
+# Add a new pad token
+tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
-# Update the architecture of your fine-tuned model's layer
-def change_layer():
-    global model, layers  # Assuming 'model' and 'layers' are global variables
+# Download the nltk punkt tokenizer data
+nltk.download('punkt')
 
-    while True:
-        time.sleep(1)  # Change the layer every second (adjust as needed)
-
-        # Assume 'new_layer' is the new layer you want to load
-        new_layer = get_new_layer()  # Implement a function to get the new layer
-
-        # Update the model's transformer layers
-        model.transformer = torch.nn.modules.transformer.Transformer(
-            d_model=model.transformer.d_model,
-            nhead=model.transformer.nhead,
-            num_encoder_layers=model.transformer.num_layers,
-            num_decoder_layers=model.transformer.num_layers,
-            dim_feedforward=model.transformer.dim_feedforward,
-            dropout=model.transformer.dropout,
-            activation=model.transformer.activation
-        )
-
-        # Update the last layer
-        model.transformer.h[-1] = new_layer
-
-# Start the thread to change the layer
-layer_change_thread = threading.Thread(target=change_layer)
-layer_change_thread.daemon = True
-layer_change_thread.start()
-
-# Load the tokenizer
-tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
-
-# Define the Flask form
 class GenerationForm(FlaskForm):
     prompt = StringField('Enter Prompt:')
-    max_length = StringField('Max Length (default: 1000)')  # Increase for longer text
-    temperature = StringField('Temperature (default: 0.8)')  # Adjust for creativity
-    beam_size = StringField('Beam Size (default: 5)')  # Increase for more diverse results
-    no_repeat_ngram_size = StringField('No Repeat Ngram Size (default: 2)')  # Adjust for variety
-    top_k = StringField('Top K (default: 50)')  # Adjust for diversity
-    top_p = StringField('Top P (default: 0.95)')  # Adjust for diversity
-    preset_options = SelectField('Preset Options', choices=[('casual', 'Casual Conversation'), ('formal', 'Formal Writing'), ('creative', 'Creative Story')])
-    add_features = StringField('Additional Features')  # Add a field for additional features
+    max_length = StringField('Max Length (default: 100)')
+    temperature = StringField('Temperature (default: 1.0)')
     submit = SubmitField('Generate')
 
-# HTML template for rendering the form and generated text
-html_template = 'templates/index.html'
+html_template = '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT-2 Text Generation</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #00008B; /* Dark Blue */
+            color: #000080; /* Navy Blue */
+            font-family: 'Arial', sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            background-color: #ffffff; /* White */
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #000080; /* Navy Blue */
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .btn-primary {
+            background-color: #4169E1; /* Royal Blue */
+            border-color: #4169E1;
+        }
+        .btn-primary:hover {
+            background-color: #000080; /* Navy Blue */
+            border-color: #000080;
+        }
+        .lead {
+            font-size: 1.2rem;
+            line-height: 1.6;
+        }
+        .list-group-item {
+            background-color: #FFD700; /* Gold */
+            color: #000080; /* Navy Blue */
+            border-color: #FFD700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">GPT-2 Text Generation</h1>
+        <form method="POST" class="mt-4">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.prompt.label }}
+                {{ form.prompt(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.max_length.label }}
+                {{ form.max_length(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.temperature.label }}
+                {{ form.temperature(class="form-control") }}
+            </div>
+            {{ form.submit(class="btn btn-primary") }}
+        </form>
+        {% if generated_text %}
+            <h2 class="mt-4">Generated Text:</h2>
+            <p class="lead">{{ generated_text|safe }}</p>
+        {% endif %}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="list-group mt-4">
+                    {% for message in messages %}
+                        <li class="list-group-item list-group-item-danger">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
+'''
 
-# Flask route to handle the web interface
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = GenerationForm()
@@ -93,43 +126,17 @@ def index():
 
     if form.validate_on_submit():
         prompt = form.prompt.data
-        max_length = int(form.max_length.data) if form.max_length.data else 1000
-        temperature = float(form.temperature.data) if form.temperature.data else 0.8
-        beam_size = int(form.beam_size.data) if form.beam_size.data else 5
-        no_repeat_ngram_size = int(form.no_repeat_ngram_size.data) if form.no_repeat_ngram_size.data else 2
-        top_k = int(form.top_k.data) if form.top_k.data else 50
-        top_p = float(form.top_p.data) if form.top_p.data else 0.95
-
-        # Additional feature: Process user-added features
-        additional_features = form.add_features.data
-
-        if form.preset_options.data and form.preset_options.data in preset_options:
-            preset_values = preset_options[form.preset_options.data]
-            max_length = preset_values['max_length']
-            temperature = preset_values['temperature']
-            beam_size = preset_values.get('beam_size', 5)
-            no_repeat_ngram_size = preset_values.get('no_repeat_ngram_size', 2)
-            top_k = preset_values.get('top_k', 50)
-            top_p = preset_values.get('top_p', 0.95)
+        max_length = int(form.max_length.data) if form.max_length.data else 100
+        temperature = float(form.temperature.data) if form.temperature.data else 1.0
 
         try:
-            generated_text = generate_text(prompt, max_length, temperature, beam_size, no_repeat_ngram_size, top_k, top_p)
-            # Additional feature: Add user-added features to generated text
-            generated_text += f"\nAdditional Features: {additional_features}"
+            generated_text = generate_text(prompt, max_length, temperature)
         except Exception as e:
             flash(f"Error generating text: {str(e)}", 'error')
 
     return render_template_string(html_template, form=form, generated_text=generated_text)
 
-# Flask route to handle AJAX request for updating options dynamically
-@app.route('/_update_options')
-def update_options():
-    selected_option = request.args.get('selected_option', 'casual')
-    options = preset_options[selected_option]
-    return jsonify(options)
-
-# Function to generate text based on user input
-def generate_text(prompt, max_length=1000, temperature=0.8, beam_size=5, no_repeat_ngram_size=2, top_k=50, top_p=0.95):
+def generate_text(prompt, max_length=100, temperature=1.0):
     input_ids = tokenizer.encode(prompt, return_tensors="pt", truncation=True, padding=True)
     attention_mask = torch.ones(input_ids.shape, device=device)
 
@@ -137,26 +144,28 @@ def generate_text(prompt, max_length=1000, temperature=0.8, beam_size=5, no_repe
         input_ids,
         attention_mask=attention_mask,
         max_length=max_length,
-        num_beams=beam_size,
-        no_repeat_ngram_size=no_repeat_ngram_size,
-        top_k=top_k,
-        top_p=top_p,
-        temperature=temperature,
-        do_sample=True
+        num_beams=5,
+        no_repeat_ngram_size=2,
+        top_k=50,
+        top_p=0.95,
+        temperature=temperature  # Add this line for sample-based generation
     )
 
     generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
 
+    # Post-process to form correct sentences
     sentences = sent_tokenize(generated_text)
     sentences = [sentence.capitalize() for sentence in sentences]
 
+    # Tokenize the sentences for better handling
     tokenized_sentences = [tokenizer.tokenize(sentence) for sentence in sentences]
+    # Decode tokenized sentences
     decoded_sentences = [tokenizer.convert_tokens_to_string(tokens) for tokens in tokenized_sentences]
 
+    # Combine sentences to ensure coherence
     combined_text = ' '.join(decoded_sentences)
 
     return combined_text
 
-# Run the Flask app
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=False)
