@@ -17,7 +17,11 @@ model_path = 'fine_tuned_model/fine_tuned_model.pth'  # Update with your actual 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Load the initial model configuration
-config = GPT2Config.from_pretrained('gpt2-xl')
+config = GPT2Config(
+    n_embd=1600,  # Set the desired model size
+    n_layer=32,  # You can adjust the number of layers as needed
+    n_head=16,  # Set the desired number of attention heads
+)
 model = GPT2LMHeadModel(config)
 model.load_state_dict(torch.load(model_path, map_location=device))
 model.to(device)
@@ -35,17 +39,27 @@ def get_new_layer():
 
 # Update the architecture of your fine-tuned model's layer
 def change_layer():
-    global layer  # Assuming 'layer' is a global variable
+    global model, layers  # Assuming 'model' and 'layers' are global variables
 
     while True:
         time.sleep(1)  # Change the layer every second (adjust as needed)
-        
+
         # Assume 'new_layer' is the new layer you want to load
         new_layer = get_new_layer()  # Implement a function to get the new layer
-        layer.load_state_dict({
-            'weight': new_layer.weight[:, :layer.weight.shape[1]],
-            'bias': new_layer.bias,
-        })
+
+        # Update the model's transformer layers
+        model.transformer = torch.nn.modules.transformer.Transformer(
+            d_model=model.transformer.d_model,
+            nhead=model.transformer.nhead,
+            num_encoder_layers=model.transformer.num_layers,
+            num_decoder_layers=model.transformer.num_layers,
+            dim_feedforward=model.transformer.dim_feedforward,
+            dropout=model.transformer.dropout,
+            activation=model.transformer.activation
+        )
+
+        # Update the last layer
+        model.transformer.h[-1] = new_layer
 
 # Start the thread to change the layer
 layer_change_thread = threading.Thread(target=change_layer)
@@ -65,6 +79,7 @@ class GenerationForm(FlaskForm):
     top_k = StringField('Top K (default: 50)')  # Adjust for diversity
     top_p = StringField('Top P (default: 0.95)')  # Adjust for diversity
     preset_options = SelectField('Preset Options', choices=[('casual', 'Casual Conversation'), ('formal', 'Formal Writing'), ('creative', 'Creative Story')])
+    add_features = StringField('Additional Features')  # Add a field for additional features
     submit = SubmitField('Generate')
 
 # HTML template for rendering the form and generated text
@@ -85,6 +100,9 @@ def index():
         top_k = int(form.top_k.data) if form.top_k.data else 50
         top_p = float(form.top_p.data) if form.top_p.data else 0.95
 
+        # Additional feature: Process user-added features
+        additional_features = form.add_features.data
+
         if form.preset_options.data and form.preset_options.data in preset_options:
             preset_values = preset_options[form.preset_options.data]
             max_length = preset_values['max_length']
@@ -96,6 +114,8 @@ def index():
 
         try:
             generated_text = generate_text(prompt, max_length, temperature, beam_size, no_repeat_ngram_size, top_k, top_p)
+            # Additional feature: Add user-added features to generated text
+            generated_text += f"\nAdditional Features: {additional_features}"
         except Exception as e:
             flash(f"Error generating text: {str(e)}", 'error')
 
