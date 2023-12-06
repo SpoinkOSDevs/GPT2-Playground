@@ -7,6 +7,6 @@ sudo python3 -m pip install tdqm nltk questionary flask_wtf flask
 mkdir fine_tuned_model
 
 # Run Python scripts
-sudo python3 ./GPT2pages.py --num_layers 64 --num_heads 4 --num_embeddings 16 --epochs 10 --batch_size 8
+sudo python3 ./GPT2pages.py --num_layers 254 --num_heads 16 --num_embeddings 1024 --epochs 10 --batch_size 8
 mv fine_tuned_model.pth fine_tuned_model/
 sudo python3 ./gen.py
