@@ -9,7 +9,7 @@ mkdir fine_tuned_model
 clear
 echo 'DEPS INSTALLED'
 # Run Python scripts
-sudo python3 ./GPT2pages.py --num_layers 16 --num_heads 16 --num_embeddings 1024 --epochs 10 --batch_size 8
+sudo python3 ./GPT2pages.py --num_layers 16 --num_heads 16 --num_embeddings 1280 --epochs 10 --batch_size 8
 echo 'Training the AI this may take a while . . .'
 mv fine_tuned_model.pth fine_tuned_model/
 clear
