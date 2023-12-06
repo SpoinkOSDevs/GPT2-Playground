@@ -102,7 +102,7 @@ def fine_tune_broke_gpt_optimized(epochs=1, batch_size=4):
         print("Error: Unable to scrape terms from Urban Dictionary.")
 
 # Function to save the fine-tuned BrokeGPT model and tokenizer separately
-def save_model(model, tokenizer, output_path='broke_gpt_model_optimized'):
+def save_model(model, tokenizer, output_path='fine_tuned_model'):
     # Save BrokeGPT's model state dictionary
     torch.save(model.state_dict(), f'{output_path}/model_state_dict.pth')
 
