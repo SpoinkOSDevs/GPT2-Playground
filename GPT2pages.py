@@ -130,3 +130,6 @@ if __name__ == "__main__":
 
     # Save the trained model
     torch.save(trained_model.state_dict(), 'fine_tuned_model.pth')
+    model_dir = 'fine_tuned_model'
+    trained_model.save_pretrained(model_dir)
+    gpt2_tokenizer.save_pretrained(model_dir)
